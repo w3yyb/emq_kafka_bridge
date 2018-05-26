@@ -5,7 +5,7 @@ This is a plugin for the EMQ broker that sends all messages received by the brok
 
 ## Build the EMQ broker
 
-1. clone emq-relx project
+1. Clone emq-relx project
 
    We need to clone the EMQ-x project [GITHUB](https://github.com/emqtt/emq-relx)
 
@@ -14,7 +14,7 @@ This is a plugin for the EMQ broker that sends all messages received by the brok
 ```
 
 2. Add EMQ Kafka bridge as a DEPS
-   Adding EMQ kafka bidge as a dependency in the Makefile.
+   Adding EMQ kafka bridge as a dependency in the Makefile.
 
    1. search for `DEPS +=` and add to the end
       > emq_kafka_bridge
@@ -62,7 +62,7 @@ Start the EMQ broker and load the plugin
 
 Test
 -----------------
-Send an MQTT message on a random topic from an MQTT client to you EMQ broker.
+Send a MQTT message on a random topic from a MQTT client to your EMQ broker.
 
 The following should be received by your kafka consumer :
 
