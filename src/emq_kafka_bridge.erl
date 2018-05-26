@@ -135,4 +135,3 @@ unload() ->
     emqttd:unhook('message.publish', fun ?MODULE:on_message_publish/2),
     emqttd:unhook('message.delivered', fun ?MODULE:on_message_delivered/4),
     emqttd:unhook('message.acked', fun ?MODULE:on_message_acked/4).
-
