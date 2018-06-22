@@ -49,7 +49,7 @@ Edit the file emq-relx/deps/emq_kafka_bridge/etc/emq_kafka_bridge.config
 	  %% partition strategies can be strict_round_robin or random
       {partition_strategy, strict_round_robin},
       %% Change the topic to produce to kafka. Default topic is "Kafka". It is on this topic that the messages will be sent from the broker to a kafka consumer
-	  {kafka_producer_topic, <<"kafka">>}
+	  {kafka_payload_producer_topic, <<"kafka">>}
     ]}]}
 ].
 ```

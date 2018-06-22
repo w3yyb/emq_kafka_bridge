@@ -54,10 +54,30 @@ load(Env) ->
 
 on_client_connected(ConnAck, Client = #mqtt_client{client_id = ClientId}, _Env) ->
     io:format("client ~s connected, connack: ~w~n", [ClientId, ConnAck]),
+    ConnectionTs = emqttd_time:now_to_secs(),
+    ConnectionType = <<"connected">>,
+    Str0 = <<"{\"deviceId\":\"">>,
+    Str1 = <<"\", \"type\":\"">>,
+    Str2 = <<"\", \"ts\":\"">>,
+    Str3 = <<"}">>,
+    Str4 = <<Str0/binary, ClientId/binary, Str1/binary, ConnectionType/binary, Str2/binary, ConnectionTs/binary, Str3/binary>>,
+    {ok, KafkaTopic} = application:get_env(emq_kafka_bridge, values),
+    ProduceTopic = proplists:get_value(kafka_events_producer_topic, KafkaTopic),
+    ekaf:produce_async(ProduceTopic, Str4),
     {ok, Client}.
 
 on_client_disconnected(Reason, _Client = #mqtt_client{client_id = ClientId}, _Env) ->
     io:format("client ~s disconnected, reason: ~w~n", [ClientId, Reason]),
+    ConnectionTs = emqttd_time:now_to_secs(),
+    ConnectionType = <<"disconnected">>,
+    Str0 = <<"{\"deviceId\":\"">>,
+    Str1 = <<"\", \"type\":\"">>,
+    Str2 = <<"\", \"ts\":\"">>,
+    Str3 = <<"}">>,
+    Str4 = <<Str0/binary, ClientId/binary, Str1/binary, ConnectionType/binary, Str2/binary, ConnectionTs/binary, Str3/binary>>,
+    {ok, KafkaTopic} = application:get_env(emq_kafka_bridge, values),
+    ProduceTopic = proplists:get_value(kafka_events_producer_topic, KafkaTopic),
+    ekaf:produce_async(ProduceTopic, Str4),
     ok.
 
 on_client_subscribe(ClientId, Username, TopicTable, _Env) ->
@@ -98,11 +118,11 @@ on_message_publish(Message = #mqtt_message{pktid   = PkgId,
     {ClientId, Username} = From,
     Str0 = <<"{\"topic\":\"">>,
     Str1 = <<"\", \"deviceId\":\"">>,
-    Str2 = <<"\", \"message\":[">>,
+    Str2 = <<"\", \"payload\":[">>,
     Str3 = <<"]}">>,
     Str4 = <<Str0/binary, Topic/binary, Str1/binary, ClientId/binary, Str2/binary, Payload/binary, Str3/binary>>,
 	{ok, KafkaTopic} = application:get_env(emq_kafka_bridge, values),
-    ProduceTopic = proplists:get_value(kafka_producer_topic, KafkaTopic),
+    ProduceTopic = proplists:get_value(kafka_payload_producer_topic, KafkaTopic),
     ekaf:produce_async(ProduceTopic, Str4),	
     {ok, Message}.
 
