@@ -52,69 +52,69 @@ load(Env) ->
     emqttd:hook('message.delivered', fun ?MODULE:on_message_delivered/4, [Env]),
     emqttd:hook('message.acked', fun ?MODULE:on_message_acked/4, [Env]).
 
-on_client_connected(ConnAck, Client = #mqtt_client{client_id = ClientId}, _Env) ->
-    io:format("client ~s connected, connack: ~w~n", [ClientId, ConnAck]),
-    % ConnectionTs = emqttd_time:now_to_secs(),
-    % ConnectionType = <<"connected">>,
-    % Str0 = <<"{\"deviceId\":\"">>,
-    % Str1 = <<"\", \"type\":\"">>,
-    % Str2 = <<"\", \"ts\":\"">>,
-    % Str3 = <<"}">>,
-    % Str4 = <<Str0/binary, ClientId/binary, Str1/binary, ConnectionType/binary, Str2/binary, ConnectionTs/binary, Str3/binary>>,
-    % {ok, KafkaTopic} = application:get_env(emq_kafka_bridge, values),
-    % ProduceTopic = proplists:get_value(kafka_events_producer_topic, KafkaTopic),
-    % ekaf:produce_async(ProduceTopic, Str4),
+on_client_connected(ConnAck, Client, _Env) ->
+    % io:format("client ~s connected, connack: ~w~n", [ClientId, ConnAck]),
+    ClientId = Client#mqtt_client.client_id,
+    ConnectionType = <<"connected">>,
+    Str0 = <<"{\"deviceId\":\"">>,
+    Str1 = <<"\", \"status\":\"">>,
+    Str2 = <<"}">>,
+    Str3 = <<Str0/binary, ClientId/binary, Str1/binary, ConnectionType/binary, Str2/binary>>,
+    {ok, KafkaTopic} = application:get_env(emq_kafka_bridge, values),
+    ProduceTopic = proplists:get_value(kafka_events_producer_topic, KafkaTopic),
+    ekaf:produce_async(ProduceTopic, Str3),
     {ok, Client}.
 
-on_client_disconnected(Reason, _Client = #mqtt_client{client_id = ClientId}, _Env) ->
-    io:format("client ~s disconnected, reason: ~w~n", [ClientId, Reason]),
-    % ConnectionTs = emqttd_time:now_to_secs(),
-    % ConnectionType = <<"disconnected">>,
-    % Str0 = <<"{\"deviceId\":\"">>,
-    % Str1 = <<"\", \"type\":\"">>,
-    % Str2 = <<"\", \"ts\":\"">>,
-    % Str3 = <<"}">>,
-    % Str4 = <<Str0/binary, ClientId/binary, Str1/binary, ConnectionType/binary, Str2/binary, ConnectionTs/binary, Str3/binary>>,
-    % {ok, KafkaTopic} = application:get_env(emq_kafka_bridge, values),
-    % ProduceTopic = proplists:get_value(kafka_events_producer_topic, KafkaTopic),
-    % ekaf:produce_async(ProduceTopic, Str4),
+on_client_disconnected(Reason, _Client, _Env) ->
+    % io:format("client ~s disconnected, reason: ~w~n", [ClientId, Reason]),
+    ClientId = _Client#mqtt_client.client_id,
+    ConnectionType = <<"disconnected">>,
+    Str0 = <<"{\"deviceId\":\"">>,
+    Str1 = <<"\", \"status\":\"">>,
+    Str2 = <<"}">>,
+    Str3 = <<Str0/binary, ClientId/binary, Str1/binary, ConnectionType/binary, Str2/binary>>,
+    {ok, KafkaTopic} = application:get_env(emq_kafka_bridge, values),
+    ProduceTopic = proplists:get_value(kafka_events_producer_topic, KafkaTopic),
+    ekaf:produce_async(ProduceTopic, Str3),
     ok.
 
 on_client_subscribe(ClientId, Username, TopicTable, _Env) ->
-    io:format("client(~s/~s) will subscribe: ~p~n", [Username, ClientId, TopicTable]),
+    % io:format("client(~s/~s) will subscribe: ~p~n", [Username, ClientId, TopicTable]),
     {ok, TopicTable}.
     
 on_client_unsubscribe(ClientId, Username, TopicTable, _Env) ->
-    io:format("client(~s/~s) unsubscribe ~p~n", [ClientId, Username, TopicTable]),
+    % io:format("client(~s/~s) unsubscribe ~p~n", [ClientId, Username, TopicTable]),
     {ok, TopicTable}.
 
 on_session_created(ClientId, Username, _Env) ->
-    io:format("session(~s/~s) created.", [ClientId, Username]).
+    % io:format("session(~s/~s) created.", [ClientId, Username])
+    ok.
 
 on_session_subscribed(ClientId, Username, {Topic, Opts}, _Env) ->
-    io:format("session(~s/~s) subscribed: ~p~n", [Username, ClientId, {Topic, Opts}]),
+    % io:format("session(~s/~s) subscribed: ~p~n", [Username, ClientId, {Topic, Opts}]),
     {ok, {Topic, Opts}}.
 
 on_session_unsubscribed(ClientId, Username, {Topic, Opts}, _Env) ->
-    io:format("session(~s/~s) unsubscribed: ~p~n", [Username, ClientId, {Topic, Opts}]),
+    % io:format("session(~s/~s) unsubscribed: ~p~n", [Username, ClientId, {Topic, Opts}]),
     ok.
 
 on_session_terminated(ClientId, Username, Reason, _Env) ->
-    io:format("session(~s/~s) terminated: ~p.", [ClientId, Username, Reason]).
+    % io:format("session(~s/~s) terminated: ~p.", [ClientId, Username, Reason])
+    ok.
 
 %% transform message and return
 on_message_publish(Message = #mqtt_message{topic = <<"$SYS/", _/binary>>}, _Env) ->
     {ok, Message};
 
-on_message_publish(Message = #mqtt_message{pktid   = PkgId,
-                        qos     = Qos,
-                        retain  = Retain,
-                        dup     = Dup,
-                        topic   = Topic,
-                        payload = Payload,
-                        from = From
-						}, _Env) ->
-    io:format("publish ~s~n", [emqttd_message:format(Message)]),
+on_message_publish(Message, _Env) ->
+    % io:format("publish ~s~n", [emqttd_message:format(Message)]),
+    Topic = Message#mqtt_message.topic,
+    Dup = Message#mqtt_message.dup,
+    Retain = Message#mqtt_message.retain,
+    Payload = Message#mqtt_message.payload,
+    From = Message#mqtt_message.from,
+    Qos = Message#mqtt_message.qos,
+    Pktid = Message#mqtt_message.pktid,
     {ClientId, Username} = From,
     Str0 = <<"{\"topic\":\"">>,
     Str1 = <<"\", \"deviceId\":\"">>,
@@ -128,11 +128,11 @@ on_message_publish(Message = #mqtt_message{pktid   = PkgId,
 
 
 on_message_delivered(ClientId, Username, Message, _Env) ->
-    io:format("delivered to client(~s/~s): ~s~n", [Username, ClientId, emqttd_message:format(Message)]),
+    % io:format("delivered to client(~s/~s): ~s~n", [Username, ClientId, emqttd_message:format(Message)]),
     {ok, Message}.
 
 on_message_acked(ClientId, Username, Message, _Env) ->
-    io:format("client(~s/~s) acked: ~s~n", [Username, ClientId, emqttd_message:format(Message)]),
+    % io:format("client(~s/~s) acked: ~s~n", [Username, ClientId, emqttd_message:format(Message)]),
     {ok, Message}.
 
 ekaf_init(_Env) ->
