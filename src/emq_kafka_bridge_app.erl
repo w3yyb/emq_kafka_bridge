@@ -32,3 +32,4 @@ stop(_State) ->
     % ok = emq_access_control:unregister_mod(auth, emq_auth_emq_kafka_bridge),
     % ok = emq_access_control:unregister_mod(acl, emq_acl_emq_kafka_bridge),
     emq_kafka_bridge:unload().
+
