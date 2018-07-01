@@ -40,18 +40,37 @@ Configuration
 ----------------------
 You will have to edit the configurations of the bridge to set the kafka Ip address and port.
 
-Edit the file emq-relx/deps/emq_kafka_bridge/etc/emq_kafka_bridge.config
-```
-[
-  {emqttd_kafka_bridge, [{values, [
-	  %%edit this to address and port on which kafka is running
-      {bootstrap_broker, {"127.0.0.1", 9092} },
-	  %% partition strategies can be strict_round_robin or random
-      {partition_strategy, strict_round_robin},
-      %% Change the topic to produce to kafka. Default topic is "Kafka". It is on this topic that the messages will be sent from the broker to a kafka consumer
-	  {kafka_payload_producer_topic, <<"kafka">>}
-    ]}]}
-].
+Edit the file emq-relx/deps/emq_kafka_bridge/etc/emq_kafka_bridge.conf
+
+```conf
+##--------------------------------------------------------------------
+## kafka Bridge
+##--------------------------------------------------------------------
+
+## The Kafka loadbalancer node host that bridge is listening on.
+##
+## Value: 127.0.0.1, localhost
+kafka.host = 127.0.0.1
+
+## The kafka loadbalancer node port that bridge is listening on.
+##
+## Value: Port
+kafka.port = 9092
+
+## The kafka loadbalancer node partition strategy.
+##
+## Value: strict_round_robin
+kafka.partitionstrategy = strict_round_robin
+
+## payload topic.
+##
+## Value: string
+kafka.payloadtopic = Processing
+
+## event topic.
+##
+## Value: File
+kafka.eventstopic = Events
 ```
 
 Start the EMQ broker and load the plugin 
