@@ -1,6 +1,8 @@
 %%--------------------------------------------------------------------
 %% Copyright (c) 2015-2017 Feng Lee <feng@emqtt.io>.
 %%
+%% Modified by Ramez Hanna <rhanna@iotblue.net>
+%% 
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
 %% You may obtain a copy of the License at
@@ -70,9 +72,7 @@ on_message_publish(Message = #mqtt_message{topic = <<"$SYS/", _/binary>>}, _Env)
     {ok, Message};
 
 on_message_publish(Message = #mqtt_message{topic = Topic}, _Env) ->
-    % From = Message#mqtt_message.from,
     {ClientId, Username} = Message#mqtt_message.from,
-    % Payload = Message#mqtt_message.payload,
     % io:format("client(~s/~s) publish message to topic: ~s~n", [ClientId, Username, Topic]),
     Payload = mochijson2:encode([
                                 {topic, Message#mqtt_message.topic},
@@ -81,26 +81,6 @@ on_message_publish(Message = #mqtt_message{topic = Topic}, _Env) ->
 							  	{payload, Message#mqtt_message.payload}]),
     produce_kafka_payload(Payload),	
     {ok, Message}.
-    % lager:info("client(~s/~s) publish message to topic: ~s.", [ClientId, Username, Topic]),
-    % Dup = Message#mqtt_message.dup,
-    % Retain = Message#mqtt_message.retain,
-    % Qos = Message#mqtt_message.qos,
-    % Pktid = Message#mqtt_message.pktid,
-    % Str0 = <<"{\"topic\":\"">>,
-    % Str1 = <<"\", \"deviceId\":\"">>,
-    % Str2 = <<"\", \"payload\":[">>,
-    % Str3 = <<"]}">>,
-    % Str4 = <<Str0/binary, Topic/binary, Str1/binary, ClientId/binary, Str2/binary, Payload/binary, Str3/binary>>,
-	% {ok, KafkaTopic} = application:get_env(emq_kafka_bridge, values),
-    % ProduceTopic = proplists:get_value(kafka_payload_producer_topic, KafkaTopic),
-    % ekaf:produce_async(ProduceTopic, Str4),
-    % Payload = mochijson2:encode([{deviceId, ClientId},
-	% 							{username, Username},
-	% 						  	{topic, Message#mqtt_message.topic},
-	% 						  	{payload, Message#mqtt_message.payload}]),
-    % produce_kafka_payload(Payload),	
-    % {ok, Message}.
-
 
 on_message_delivered(ClientId, Username, Message, _Env) ->
     % io:format("delivered to client(~s/~s): ~s~n", [Username, ClientId, emqttd_message:format(Message)]),
