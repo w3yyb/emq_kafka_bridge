@@ -119,7 +119,7 @@ produce_kafka_payload(Message) ->
 	Topic = <<"Processing">>,
 	io:format("send to kafka payload topic: ~s, data: ~s~n", [Topic, Message]),
 	io:format("send to kafka payload topic: ~w~n", [ekaf]),
-    try ekaf:produce_async(Topic, list_to_binary(Message))
+    try ekaf:produce_sync(Topic, list_to_binary(Message))
     % try ekaf:produce_sync(Topic, list_to_binary(Message))
     catch _:Error ->
         lager:error("can't send to kafka error: ~s~n", [Error])
@@ -131,7 +131,7 @@ produce_kafka_event(Message) ->
 	Topic = <<"Events">>,
 	io:format("send to kafka event topic: ~s, data: ~s~n", [Topic, Message]),
 	io:format("send to kafka payload topic: ~w~n", [ekaf]),
-    try ekaf:produce_async(Topic, list_to_binary(Message))
+    try ekaf:produce_sync(Topic, list_to_binary(Message))
     % try ekaf:produce_sync(Topic, list_to_binary(Message))
     catch _:Error ->
         lager:error("can't send to kafka error: ~s~n", [Error])
