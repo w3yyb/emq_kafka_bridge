@@ -98,6 +98,7 @@ ekaf_init(_Env) ->
     application:set_env(ekaf, ekaf_bootstrap_broker,  {KafkaHost, list_to_integer(KafkaPort)}),
     application:set_env(ekaf, ekaf_partition_strategy, KafkaPartitionStrategy),
     {ok, _} = application:ensure_all_started(ekaf),
+    io:format("Init ekaf server with ~p~n", [ekaf]),
     io:format("Init ekaf server with ~s:~s, topic: ~s~n", [KafkaHost, KafkaPort, KafkaPartitionStrategy]).
 
 %% Called when the plugin application stop
@@ -113,19 +114,25 @@ unload() ->
     emqttd:unhook('message.acked', fun ?MODULE:on_message_acked/4).
 
 produce_kafka_payload(Message) ->
-	{ok, KafkaValue} = application:get_env(emq_kafka_bridge, broker),
-	Topic = proplists:get_value(payloadtopic, KafkaValue),
+	% {ok, KafkaValue} = application:get_env(emq_kafka_bridge, broker),
+	% Topic = proplists:get_value(payloadtopic, KafkaValue),
+	Topic = <<"Processing">>,
 	io:format("send to kafka payload topic: ~s, data: ~s~n", [Topic, Message]),
-    try ekaf:produce_async(list_to_binary(Topic), list_to_binary(Message))
+	io:format("send to kafka payload topic: ~w~n", [ekaf]),
+    try ekaf:produce_async(Topic, list_to_binary(Message))
+    % try ekaf:produce_sync(Topic, list_to_binary(Message))
     catch _:Error ->
         lager:error("can't send to kafka error: ~s~n", [Error])
     end.
 
 produce_kafka_event(Message) ->
-	{ok, KafkaValue} = application:get_env(emq_kafka_bridge, broker),
-	Topic = proplists:get_value(eventstopic, KafkaValue),
+	% {ok, KafkaValue} = application:get_env(emq_kafka_bridge, broker),
+	% Topic = proplists:get_value(eventstopic, KafkaValue),
+	Topic = <<"Events">>,
 	io:format("send to kafka event topic: ~s, data: ~s~n", [Topic, Message]),
-    try ekaf:produce_async(list_to_binary(Topic), list_to_binary(Message))
+	io:format("send to kafka payload topic: ~w~n", [ekaf]),
+    try ekaf:produce_async(Topic, list_to_binary(Message))
+    % try ekaf:produce_sync(Topic, list_to_binary(Message))
     catch _:Error ->
         lager:error("can't send to kafka error: ~s~n", [Error])
     end.
