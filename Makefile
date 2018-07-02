@@ -12,6 +12,10 @@ dep_cuttlefish = git https://github.com/emqtt/cuttlefish
 
 COVER = true
 
+ERLC_OPTS += +debug_info
+ERLC_OPTS += +'{parse_transform, lager_transform}'
+TEST_ERLC_OPTS += +'{parse_transform, lager_transform}'
+
 include erlang.mk
 
 app:: rebar.config

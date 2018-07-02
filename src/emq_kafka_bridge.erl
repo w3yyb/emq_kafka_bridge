@@ -29,7 +29,6 @@
 -import(string,[concat/2]).
 -import(lists,[nth/2]). 
 
-
 -export([load/1, unload/0]).
 
 %% Hooks functions
@@ -95,11 +94,12 @@ ekaf_init(_Env) ->
     KafkaHost = proplists:get_value(host, BrokerValues),
     KafkaPort = proplists:get_value(port, BrokerValues),
     KafkaPartitionStrategy= proplists:get_value(partitionstrategy, BrokerValues),
+    KafkaPartitionWorkers= proplists:get_value(partitionworkers, BrokerValues),
     application:set_env(ekaf, ekaf_bootstrap_broker,  {KafkaHost, list_to_integer(KafkaPort)}),
     application:set_env(ekaf, ekaf_partition_strategy, KafkaPartitionStrategy),
+    application:set_env(ekaf, ekaf_per_partition_workers, KafkaPartitionWorkers),
     {ok, _} = application:ensure_all_started(ekaf),
-    io:format("Init ekaf server with ~p~n", [ekaf]),
-    io:format("Init ekaf server with ~s:~s, topic: ~s~n", [KafkaHost, KafkaPort, KafkaPartitionStrategy]).
+    lager:notice("Init ekaf server with ~s:~s, topic: ~s~n", [KafkaHost, KafkaPort, KafkaPartitionStrategy]).
 
 %% Called when the plugin application stop
 unload() ->
@@ -114,25 +114,19 @@ unload() ->
     emqttd:unhook('message.acked', fun ?MODULE:on_message_acked/4).
 
 produce_kafka_payload(Message) ->
-	% {ok, KafkaValue} = application:get_env(emq_kafka_bridge, broker),
-	% Topic = proplists:get_value(payloadtopic, KafkaValue),
-	Topic = <<"Processing">>,
-	io:format("send to kafka payload topic: ~s, data: ~s~n", [Topic, Message]),
-	io:format("send to kafka payload topic: ~w~n", [ekaf]),
-    try ekaf:produce_sync(Topic, list_to_binary(Message))
-    % try ekaf:produce_sync(Topic, list_to_binary(Message))
+	{ok, KafkaValue} = application:get_env(emq_kafka_bridge, broker),
+	Topic = proplists:get_value(payloadtopic, KafkaValue),
+    lager:debug("send to kafka payload topic: ~s, data: ~s~n", [Topic, Message]),
+    try ekaf:produce_async(list_to_binary(Topic), list_to_binary(Message))
     catch _:Error ->
-        lager:error("can't send to kafka error: ~s~n", [Error])
+        lager:error("can't send to kafka error: ~p~n", [Error])
     end.
 
 produce_kafka_event(Message) ->
-	% {ok, KafkaValue} = application:get_env(emq_kafka_bridge, broker),
-	% Topic = proplists:get_value(eventstopic, KafkaValue),
-	Topic = <<"Events">>,
-	io:format("send to kafka event topic: ~s, data: ~s~n", [Topic, Message]),
-	io:format("send to kafka payload topic: ~w~n", [ekaf]),
-    try ekaf:produce_sync(Topic, list_to_binary(Message))
-    % try ekaf:produce_sync(Topic, list_to_binary(Message))
+	{ok, KafkaValue} = application:get_env(emq_kafka_bridge, broker),
+	Topic = proplists:get_value(eventstopic, KafkaValue),
+	lager:debug("send to kafka payload topic: ~s, data: ~s~n", [Topic, Message]),
+    try ekaf:produce_async(list_to_binary(Topic), list_to_binary(Message))
     catch _:Error ->
-        lager:error("can't send to kafka error: ~s~n", [Error])
+        lager:error("can't send to kafka error: ~p~n", [Error])
     end.
