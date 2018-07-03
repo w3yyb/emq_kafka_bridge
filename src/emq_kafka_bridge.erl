@@ -53,17 +53,22 @@ load(Env) ->
 
 on_client_connected(ConnAck, Client = #mqtt_client{client_id = ClientId}, _Env) ->
     % io:format("client ~s connected, connack: ~w~n", [ClientId, ConnAck]),
-    Message = mochijson2:encode([{status, <<"connected">>},
-                                    {deviceId, ClientId}]),
-    produce_kafka_event(Message),
+    Message = mochijson2:encode([
+        {type, <<"event">>},
+        {status, <<"connected">>},
+        {deviceId, ClientId}
+    ]),
+    produce_kafka_payload(Message),
     {ok, Client}.
 
 on_client_disconnected(Reason, _Client = #mqtt_client{client_id = ClientId}, _Env) ->
     % io:format("client ~s disconnected, reason: ~w~n", [ClientId, Reason]),
     Message = mochijson2:encode([
+        {type, <<"event">>},
         {status, <<"disconnected">>},
-        {deviceId, ClientId}]),
-    produce_kafka_event(Message),
+        {deviceId, ClientId}
+    ]),
+    produce_kafka_payload(Message),
     ok.
 
 %% transform message and return
@@ -74,10 +79,11 @@ on_message_publish(Message = #mqtt_message{topic = Topic}, _Env) ->
     {ClientId, Username} = Message#mqtt_message.from,
     % io:format("client(~s/~s) publish message to topic: ~s~n", [ClientId, Username, Topic]),
     Payload = mochijson2:encode([
-                                {topic, Message#mqtt_message.topic},
-                                {deviceId, ClientId},
-								{username, Username},							  	
-							  	{payload, Message#mqtt_message.payload}]),
+        {type, <<"payload">>},
+        {topic, Message#mqtt_message.topic},
+        {deviceId, ClientId},
+        {username, Username},							  	
+        {payload, Message#mqtt_message.payload}]),
     produce_kafka_payload(Payload),	
     {ok, Message}.
 
@@ -117,15 +123,6 @@ produce_kafka_payload(Message) ->
 	{ok, KafkaValue} = application:get_env(emq_kafka_bridge, broker),
 	Topic = proplists:get_value(payloadtopic, KafkaValue),
     lager:debug("send to kafka payload topic: ~s, data: ~s~n", [Topic, Message]),
-    try ekaf:produce_async(list_to_binary(Topic), list_to_binary(Message))
-    catch _:Error ->
-        lager:error("can't send to kafka error: ~p~n", [Error])
-    end.
-
-produce_kafka_event(Message) ->
-	{ok, KafkaValue} = application:get_env(emq_kafka_bridge, broker),
-	Topic = proplists:get_value(eventstopic, KafkaValue),
-	lager:debug("send to kafka payload topic: ~s, data: ~s~n", [Topic, Message]),
     try ekaf:produce_async(list_to_binary(Topic), list_to_binary(Message))
     catch _:Error ->
         lager:error("can't send to kafka error: ~p~n", [Error])

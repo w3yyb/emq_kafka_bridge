@@ -30,4 +30,4 @@ start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
-    {ok, { {one_for_all, 10, 100}, []} }.
+    {ok, { {one_for_all, 10, 3600}, []} }.
