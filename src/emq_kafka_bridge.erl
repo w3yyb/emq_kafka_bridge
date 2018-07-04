@@ -104,8 +104,8 @@ ekaf_init(_Env) ->
     application:set_env(ekaf, ekaf_bootstrap_broker,  {KafkaHost, list_to_integer(KafkaPort)}),
     application:set_env(ekaf, ekaf_partition_strategy, KafkaPartitionStrategy),
     application:set_env(ekaf, ekaf_per_partition_workers, KafkaPartitionWorkers),
-    {ok, _} = application:ensure_all_started(ekaf),
-    lager:notice("Init ekaf server with ~s:~s, topic: ~s~n", [KafkaHost, KafkaPort, KafkaPartitionStrategy]).
+    {ok, _} = application:ensure_all_started(ekaf).
+    % lager:notice("Init ekaf server with ~s:~s, topic: ~s~n", [KafkaHost, KafkaPort, KafkaPartitionStrategy]).
 
 %% Called when the plugin application stop
 unload() ->
@@ -120,10 +120,11 @@ unload() ->
     emqttd:unhook('message.acked', fun ?MODULE:on_message_acked/4).
 
 produce_kafka_payload(Message) ->
-	{ok, KafkaValue} = application:get_env(emq_kafka_bridge, broker),
-	Topic = proplists:get_value(payloadtopic, KafkaValue),
-    lager:debug("send to kafka payload topic: ~s, data: ~s~n", [Topic, Message]),
-    try ekaf:produce_async(list_to_binary(Topic), list_to_binary(Message))
+	% {ok, KafkaValue} = application:get_env(emq_kafka_bridge, broker),
+	% Topic = proplists:get_value(payloadtopic, KafkaValue),
+    Topic = <<"Processing">>,
+    % lager:debug("send to kafka payload topic: ~s, data: ~s~n", [Topic, Message]),
+    try ekaf:produce_async(Topic, Message)
     catch _:Error ->
         lager:error("can't send to kafka error: ~p~n", [Error])
     end.
