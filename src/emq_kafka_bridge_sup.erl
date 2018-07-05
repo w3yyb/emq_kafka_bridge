@@ -1,8 +1,6 @@
 %%--------------------------------------------------------------------
 %% Copyright (c) 2015-2017 Feng Lee <feng@emqtt.io>.
 %%
-%% Modified by Ramez Hanna <rhanna@iotblue.net>
-%% 
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
 %% You may obtain a copy of the License at
@@ -30,4 +28,4 @@ start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
-    {ok, { {one_for_all, 10, 3600}, []} }.
+    {ok, { {one_for_one, 10, 100}, []} }.
