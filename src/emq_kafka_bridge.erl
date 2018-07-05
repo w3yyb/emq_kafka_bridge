@@ -146,7 +146,7 @@ produce_kafka_payload(Message) ->
     Topic = <<"Processing">>,
     Payload = iolist_to_binary(mochijson2:encode(Message)),
 
-	io:format("send to kafka payload topic: ~s, data: ~s~n", [Topic, Payload]),
+	% io:format("send to kafka payload topic: ~s, data: ~s~n", [Topic, Payload]),
 	% {ok, KafkaValue} = application:get_env(emq_kafka_bridge, broker),
 	% Topic = proplists:get_value(payloadtopic, KafkaValue),
     % lager:debug("send to kafka payload topic: ~s, data: ~s~n", [Topic, Message]),
