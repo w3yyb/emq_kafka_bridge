@@ -102,8 +102,12 @@ ekaf_init(_Env) ->
     application:set_env(ekaf, ekaf_bootstrap_broker,  {KafkaHost, list_to_integer(KafkaPort)}),
     application:set_env(ekaf, ekaf_partition_strategy, KafkaPartitionStrategy),
     application:set_env(ekaf, ekaf_per_partition_workers, KafkaPartitionWorkers),
+    application:set_env(ekaf, ekaf_buffer_ttl, 10),
+    application:set_env(ekaf, ekaf_max_downtime_buffer_size, 5),
+    % {ok, _} = application:ensure_all_started(kafkamocker),
+    {ok, _} = application:ensure_all_started(gproc),
+    % {ok, _} = application:ensure_all_started(ranch),    
     {ok, _} = application:ensure_all_started(ekaf).
-    % lager:notice("Init ekaf server with ~s:~s, topic: ~s~n", [KafkaHost, KafkaPort, KafkaPartitionStrategy]).
 
 format_event(Action, Client) ->
     Event = [{action, Action},
@@ -145,7 +149,8 @@ unload() ->
 produce_kafka_payload(Message) ->
     Topic = <<"Processing">>,
     Payload = iolist_to_binary(mochijson2:encode(Message)),
-    ekaf:produce_async(Topic, Payload).
+    ekaf:produce_async_batched(Topic, Payload).
+    % ekaf:produce_async(Topic, Payload).
 	% io:format("send to kafka payload topic: ~s, data: ~s~n", [Topic, Payload]),
 	% {ok, KafkaValue} = application:get_env(emq_kafka_bridge, broker),
 	% Topic = proplists:get_value(payloadtopic, KafkaValue),
