@@ -37,10 +37,6 @@
   KafkaPartitionStrategy = cuttlefish:conf_get("kafka.partitionstrategy", Conf),
   KafkaPartitionWorkers = cuttlefish:conf_get("kafka.partitionworkers", Conf),
   KafkaPayloadTopic = cuttlefish:conf_get("kafka.payloadtopic", Conf),
-<<<<<<< HEAD
-  [{host, KafkaHost}, {port, KafkaPort}, {partitionstrategy, KafkaPartitionStrategy}, {partitionworkers, KafkaPartitionWorkers}, {payloadtopic, KafkaPayloadTopic}]
-=======
   KafkaEventTopic = cuttlefish:conf_get("kafka.eventtopic", Conf),
   [{host, KafkaHost}, {port, KafkaPort}, {partitionstrategy, KafkaPartitionStrategy}, {partitionworkers, KafkaPartitionWorkers}, {payloadtopic, KafkaPayloadTopic}, {eventtopic, KafkaEventTopic}]
->>>>>>> 3ff8610c35b027eae904d6688439bb2074d9af54
   end}.
