@@ -52,27 +52,13 @@ load(Env) ->
     emqttd:hook('message.acked', fun ?MODULE:on_message_acked/4, [Env]).
 
 on_client_connected(ConnAck, Client, _Env) ->
-    % io:format("client ~s connected, connack: ~w~n", [ClientId, ConnAck]),
-    % produce_kafka_payload(mochijson2:encode([
-    %     {type, <<"event">>},
-    %     {status, <<"connected">>},
-    %     {deviceId, ClientId}
-    % ])),
-    % produce_kafka_payload(<<"event">>, Client),
     {ok, Event} = format_event(connected, Client),
-    produce_kafka_payload(Event),
+    produce_kafka_log(Event),
     {ok, Client}.
 
 on_client_disconnected(Reason, _Client, _Env) ->
-    % io:format("client ~s disconnected, reason: ~w~n", [ClientId, Reason]),
-    % Message = mochijson2:encode([
-    %     {type, },
-    %     {status, <<"disconnected">>},
-    %     {deviceId, ClientId}
-    % ]),
-    % produce_kafka_payload(<<"event">>, _Client),
     {ok, Event} = format_event(disconnected, _Client),
-    produce_kafka_payload(Event),	
+    produce_kafka_log(Event),	
     ok.
 
 %% transform message and return
@@ -80,17 +66,14 @@ on_message_publish(Message = #mqtt_message{topic = <<"$SYS/", _/binary>>}, _Env)
     {ok, Message};
 
 on_message_publish(Message, _Env) ->
-    % io:format("publish message : ~s~n", [emqttd_message:format(Message)]),
     {ok, Payload} = format_payload(Message),
     produce_kafka_payload(Payload),	
     {ok, Message}.
 
 on_message_delivered(ClientId, Username, Message, _Env) ->
-    % io:format("delivered to client(~s/~s): ~s~n", [Username, ClientId, emqttd_message:format(Message)]),
     {ok, Message}.
 
 on_message_acked(ClientId, Username, Message, _Env) ->
-    % io:format("client(~s/~s) acked: ~s~n", [Username, ClientId, emqttd_message:format(Message)]),
     {ok, Message}.
 
 ekaf_init(_Env) ->
@@ -99,14 +82,17 @@ ekaf_init(_Env) ->
     KafkaPort = proplists:get_value(port, BrokerValues),
     KafkaPartitionStrategy= proplists:get_value(partitionstrategy, BrokerValues),
     KafkaPartitionWorkers= proplists:get_value(partitionworkers, BrokerValues),
+    KafkaPayloadTopic = proplists:get_value(payloadtopic, BrokerValues),
+    KafkaEventTopic = proplists:get_value(eventtopic, BrokerValues),
     application:set_env(ekaf, ekaf_bootstrap_broker,  {KafkaHost, list_to_integer(KafkaPort)}),
     application:set_env(ekaf, ekaf_partition_strategy, KafkaPartitionStrategy),
     application:set_env(ekaf, ekaf_per_partition_workers, KafkaPartitionWorkers),
     application:set_env(ekaf, ekaf_buffer_ttl, 10),
     application:set_env(ekaf, ekaf_max_downtime_buffer_size, 5),
-    % {ok, _} = application:ensure_all_started(kafkamocker),
+    ets:new(topic_table, [named_table, protected, set, {keypos, 1}]),
+    ets:insert(topic_table, {kafka_payload_topic, KafkaPayloadTopic}),
+    ets:insert(topic_table, {kafka_event_topic, KafkaEventTopic}),
     {ok, _} = application:ensure_all_started(gproc),
-    % {ok, _} = application:ensure_all_started(ranch),    
     {ok, _} = application:ensure_all_started(ekaf).
 
 format_event(Action, Client) ->
@@ -147,12 +133,14 @@ unload() ->
     emqttd:unhook('message.acked', fun ?MODULE:on_message_acked/4).
 
 produce_kafka_payload(Message) ->
-    Topic = <<"Processing">>,
+    [{_, Topic}] = ets:lookup(topic_table, kafka_payload_topic),
+	io:format("send to kafka event topic: byte size: ~p~n", [byte_size(list_to_binary(Topic))]),    
     Payload = iolist_to_binary(mochijson2:encode(Message)),
-    ekaf:produce_async_batched(Topic, Payload).
-    % ekaf:produce_async(Topic, Payload).
-	% io:format("send to kafka payload topic: ~s, data: ~s~n", [Topic, Payload]),
-	% {ok, KafkaValue} = application:get_env(emq_kafka_bridge, broker),
-	% Topic = proplists:get_value(payloadtopic, KafkaValue),
-    % lager:debug("send to kafka payload topic: ~s, data: ~s~n", [Topic, Message]),
+    ekaf:produce_async_batched(list_to_binary(Topic), Payload).
     
+
+produce_kafka_log(Message) ->
+    [{_, Topic}] = ets:lookup(topic_table, kafka_event_topic),
+    io:format("send to kafka event topic: byte size: ~p~n", [byte_size(list_to_binary(Topic))]),    
+    Payload = iolist_to_binary(mochijson2:encode(Message)),
+    ekaf:produce_async_batched(list_to_binary(Topic), Payload).
