@@ -29,7 +29,6 @@
 -import(string,[concat/2]).
 -import(lists,[nth/2]). 
 
-
 -export([load/1, unload/0]).
 
 %% Hooks functions
@@ -52,42 +51,29 @@ load(Env) ->
     emqttd:hook('message.delivered', fun ?MODULE:on_message_delivered/4, [Env]),
     emqttd:hook('message.acked', fun ?MODULE:on_message_acked/4, [Env]).
 
-on_client_connected(ConnAck, Client = #mqtt_client{client_id = ClientId}, _Env) ->
-    % io:format("client ~s connected, connack: ~w~n", [ClientId, ConnAck]),
-    Message = mochijson2:encode([{status, <<"connected">>},
-                                    {deviceId, ClientId}]),
-    produce_kafka_event(Message),
+on_client_connected(ConnAck, Client, _Env) ->
+    {ok, Event} = format_event(connected, Client),
+    produce_kafka_log(Event),
     {ok, Client}.
 
-on_client_disconnected(Reason, _Client = #mqtt_client{client_id = ClientId}, _Env) ->
-    % io:format("client ~s disconnected, reason: ~w~n", [ClientId, Reason]),
-    Message = mochijson2:encode([
-        {status, <<"disconnected">>},
-        {deviceId, ClientId}]),
-    produce_kafka_event(Message),
+on_client_disconnected(Reason, _Client, _Env) ->
+    {ok, Event} = format_event(disconnected, _Client),
+    produce_kafka_log(Event),	
     ok.
 
 %% transform message and return
 on_message_publish(Message = #mqtt_message{topic = <<"$SYS/", _/binary>>}, _Env) ->
     {ok, Message};
 
-on_message_publish(Message = #mqtt_message{topic = Topic}, _Env) ->
-    {ClientId, Username} = Message#mqtt_message.from,
-    % io:format("client(~s/~s) publish message to topic: ~s~n", [ClientId, Username, Topic]),
-    Payload = mochijson2:encode([
-                                {topic, Message#mqtt_message.topic},
-                                {deviceId, ClientId},
-								{username, Username},							  	
-							  	{payload, Message#mqtt_message.payload}]),
+on_message_publish(Message, _Env) ->
+    {ok, Payload} = format_payload(Message),
     produce_kafka_payload(Payload),	
     {ok, Message}.
 
 on_message_delivered(ClientId, Username, Message, _Env) ->
-    % io:format("delivered to client(~s/~s): ~s~n", [Username, ClientId, emqttd_message:format(Message)]),
     {ok, Message}.
 
 on_message_acked(ClientId, Username, Message, _Env) ->
-    % io:format("client(~s/~s) acked: ~s~n", [Username, ClientId, emqttd_message:format(Message)]),
     {ok, Message}.
 
 ekaf_init(_Env) ->
@@ -95,11 +81,44 @@ ekaf_init(_Env) ->
     KafkaHost = proplists:get_value(host, BrokerValues),
     KafkaPort = proplists:get_value(port, BrokerValues),
     KafkaPartitionStrategy= proplists:get_value(partitionstrategy, BrokerValues),
+    KafkaPartitionWorkers= proplists:get_value(partitionworkers, BrokerValues),
+    KafkaPayloadTopic = proplists:get_value(payloadtopic, BrokerValues),
+    KafkaEventTopic = proplists:get_value(eventtopic, BrokerValues),
     application:set_env(ekaf, ekaf_bootstrap_broker,  {KafkaHost, list_to_integer(KafkaPort)}),
     application:set_env(ekaf, ekaf_partition_strategy, KafkaPartitionStrategy),
-    {ok, _} = application:ensure_all_started(ekaf),
-    io:format("Init ekaf server with ~p~n", [ekaf]),
-    io:format("Init ekaf server with ~s:~s, topic: ~s~n", [KafkaHost, KafkaPort, KafkaPartitionStrategy]).
+    application:set_env(ekaf, ekaf_per_partition_workers, KafkaPartitionWorkers),
+    application:set_env(ekaf, ekaf_buffer_ttl, 10),
+    application:set_env(ekaf, ekaf_max_downtime_buffer_size, 5),
+    ets:new(topic_table, [named_table, protected, set, {keypos, 1}]),
+    ets:insert(topic_table, {kafka_payload_topic, KafkaPayloadTopic}),
+    ets:insert(topic_table, {kafka_event_topic, KafkaEventTopic}),
+    {ok, _} = application:ensure_all_started(gproc),
+    {ok, _} = application:ensure_all_started(ekaf).
+
+format_event(Action, Client) ->
+    Event = [{action, Action},
+                {device_id, Client#mqtt_client.client_id},
+                {username, Client#mqtt_client.username}],
+    {ok, Event}.
+
+format_payload(Message) ->
+    {ClientId, Username} = format_from(Message#mqtt_message.from),
+    Payload = [{action, message_publish},
+                  {device_id, ClientId},
+                  {username, Username},
+                  {topic, Message#mqtt_message.topic},
+                  {payload, Message#mqtt_message.payload},
+                  {ts, emqttd_time:now_secs(Message#mqtt_message.timestamp)}],
+    {ok, Payload}.
+
+format_from({ClientId, Username}) ->
+    {ClientId, Username};
+format_from(From) when is_atom(From) ->
+    {a2b(From), a2b(From)};
+format_from(_) ->
+    {<<>>, <<>>}.
+
+a2b(A) -> erlang:atom_to_binary(A, utf8).
 
 %% Called when the plugin application stop
 unload() ->
@@ -114,25 +133,14 @@ unload() ->
     emqttd:unhook('message.acked', fun ?MODULE:on_message_acked/4).
 
 produce_kafka_payload(Message) ->
-	% {ok, KafkaValue} = application:get_env(emq_kafka_bridge, broker),
-	% Topic = proplists:get_value(payloadtopic, KafkaValue),
-	Topic = <<"Processing">>,
-	io:format("send to kafka payload topic: ~s, data: ~s~n", [Topic, Message]),
-	io:format("send to kafka payload topic: ~w~n", [ekaf]),
-    try ekaf:produce_async(Topic, list_to_binary(Message))
-    % try ekaf:produce_sync(Topic, list_to_binary(Message))
-    catch _:Error ->
-        lager:error("can't send to kafka error: ~s~n", [Error])
-    end.
+    [{_, Topic}] = ets:lookup(topic_table, kafka_payload_topic),
+	io:format("send to kafka event topic: byte size: ~p~n", [byte_size(list_to_binary(Topic))]),    
+    Payload = iolist_to_binary(mochijson2:encode(Message)),
+    ekaf:produce_async_batched(list_to_binary(Topic), Payload).
+    
 
-produce_kafka_event(Message) ->
-	% {ok, KafkaValue} = application:get_env(emq_kafka_bridge, broker),
-	% Topic = proplists:get_value(eventstopic, KafkaValue),
-	Topic = <<"Events">>,
-	io:format("send to kafka event topic: ~s, data: ~s~n", [Topic, Message]),
-	io:format("send to kafka payload topic: ~w~n", [ekaf]),
-    try ekaf:produce_async(Topic, list_to_binary(Message))
-    % try ekaf:produce_sync(Topic, list_to_binary(Message))
-    catch _:Error ->
-        lager:error("can't send to kafka error: ~s~n", [Error])
-    end.
+produce_kafka_log(Message) ->
+    [{_, Topic}] = ets:lookup(topic_table, kafka_event_topic),
+    io:format("send to kafka event topic: byte size: ~p~n", [byte_size(list_to_binary(Topic))]),    
+    Payload = iolist_to_binary(mochijson2:encode(Message)),
+    ekaf:produce_async_batched(list_to_binary(Topic), Payload).
