@@ -151,6 +151,7 @@ ekaf_init(_Env) ->
     KafkaPayloadTopic = proplists:get_value(payloadtopic, BrokerValues),
     KafkaEventTopic = proplists:get_value(eventtopic, BrokerValues),
     application:set_env(ekaf, ekaf_bootstrap_broker,  {KafkaHost, list_to_integer(KafkaPort)}),
+    application:set_env(ekaf, ekaf_bootstrap_topics,  [KafkaPayloadTopic, KafkaEventTopic]),
     application:set_env(ekaf, ekaf_partition_strategy, KafkaPartitionStrategy),
     application:set_env(ekaf, ekaf_per_partition_workers, KafkaPartitionWorkers),
     application:set_env(ekaf, ekaf_buffer_ttl, 10),
