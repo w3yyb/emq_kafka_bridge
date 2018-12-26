@@ -58,13 +58,6 @@ load(Env) ->
 
 on_client_connected(ConnAck, Client = #mqtt_client{client_id = ClientId, username = Username}, _Env) ->
     % io:format("client ~s/~s will connected: ~w.~n", [ClientId, Username, ConnAck]),
-    % {ok, Event} = format_event(connected, Client),
-    % produce_kafka_log(Event),
-    % Event = [{action, tryconnecting},
-    %             {device_id, ClientId},
-    %             {username, Username},
-    %             {result, ConnAck}],
-    % produce_kafka_log(Event),
     Event = [{action, <<"connected">>},
                 {device_id, ClientId},
                 {username, Username},
@@ -74,13 +67,6 @@ on_client_connected(ConnAck, Client = #mqtt_client{client_id = ClientId, usernam
 
 on_client_disconnected(Reason, _Client = #mqtt_client{client_id = ClientId, username = Username}, _Env) ->
     % io:format("client ~s/~s will connected: ~w~n", [ClientId, Username, Reason]),
-    % {ok, Event} = format_event(disconnected, _Client),
-    % produce_kafka_log(Event),
-    % Event = [{action, trydisconnecting},
-    %             {device_id, ClientId},
-    %             {username, Username},
-    %             {reason, Reason}],
-    % produce_kafka_log(Event),
     Event = [{action, <<"disconnected">>},
                 {device_id, ClientId},
                 {username, Username},
@@ -148,17 +134,18 @@ ekaf_init(_Env) ->
     KafkaPort = proplists:get_value(port, BrokerValues),
     KafkaPartitionStrategy= proplists:get_value(partitionstrategy, BrokerValues),
     KafkaPartitionWorkers= proplists:get_value(partitionworkers, BrokerValues),
-    KafkaPayloadTopic = proplists:get_value(payloadtopic, BrokerValues),
-    KafkaEventTopic = proplists:get_value(eventtopic, BrokerValues),
+    % KafkaPayloadTopic = proplists:get_value(payloadtopic, BrokerValues),
+    % KafkaEventTopic = proplists:get_value(eventtopic, BrokerValues),
     application:set_env(ekaf, ekaf_bootstrap_broker,  {KafkaHost, list_to_integer(KafkaPort)}),
-    application:set_env(ekaf, ekaf_bootstrap_topics,  [KafkaPayloadTopic, KafkaEventTopic]),
+    application:set_env(ekaf, ekaf_bootstrap_topics,  [<<"Processing">>, <<"DeviceLog">>]),
     application:set_env(ekaf, ekaf_partition_strategy, KafkaPartitionStrategy),
     application:set_env(ekaf, ekaf_per_partition_workers, KafkaPartitionWorkers),
-    application:set_env(ekaf, ekaf_buffer_ttl, 10),
-    application:set_env(ekaf, ekaf_max_downtime_buffer_size, 5),
-    ets:new(topic_table, [named_table, protected, set, {keypos, 1}]),
-    ets:insert(topic_table, {kafka_payload_topic, KafkaPayloadTopic}),
-    ets:insert(topic_table, {kafka_event_topic, KafkaEventTopic}),
+    application:set_env(ekaf, ekaf_per_partition_workers_max, 10),
+    % application:set_env(ekaf, ekaf_buffer_ttl, 10),
+    % application:set_env(ekaf, ekaf_max_downtime_buffer_size, 5),
+    % ets:new(topic_table, [named_table, protected, set, {keypos, 1}]),
+    % ets:insert(topic_table, {kafka_payload_topic, KafkaPayloadTopic}),
+    % ets:insert(topic_table, {kafka_event_topic, KafkaEventTopic}),
     {ok, _} = application:ensure_all_started(gproc),
     {ok, _} = application:ensure_all_started(ekaf).
 
@@ -203,14 +190,20 @@ unload() ->
 
 
 produce_kafka_payload(Message) ->
-    [{_, Topic}] = ets:lookup(topic_table, kafka_payload_topic),
+    % [{_, Topic}] = ets:lookup(topic_table, kafka_payload_topic),
+    Topic = <<"Processing">>,
 	% io:format("send to kafka event topic: byte size: ~p~n", [byte_size(list_to_binary(Topic))]),    
-    Payload = iolist_to_binary(mochijson2:encode(Message)),
-    ekaf:produce_async(list_to_binary(Topic), Payload).
+    % Payload = iolist_to_binary(mochijson2:encode(Message)),
+    Payload = jsx:encode(Message),
+    ok = ekaf:produce_async(Topic, Payload),
+    ok.
     
 
 produce_kafka_log(Message) ->
-    [{_, Topic}] = ets:lookup(topic_table, kafka_event_topic),
+    % [{_, Topic}] = ets:lookup(topic_table, kafka_event_topic),
+    Topic = <<"DeviceLog">>,
     % io:format("send to kafka event topic: byte size: ~p~n", [byte_size(list_to_binary(Topic))]),    
-    Payload = iolist_to_binary(mochijson2:encode(Message)),
-    ekaf:produce_async(list_to_binary(Topic), Payload).
+    % Payload = iolist_to_binary(mochijson2:encode(Message)),
+    Payload = jsx:encode(Message),
+    ok = ekaf:produce_async(Topic, Payload),
+    ok.
