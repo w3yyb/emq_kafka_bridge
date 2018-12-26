@@ -50,7 +50,7 @@ Edit the file emq-relx/deps/emq_kafka_bridge/etc/emq_kafka_bridge.conf
 ## The Kafka loadbalancer node host that bridge is listening on.
 ##
 ## Value: 127.0.0.1, localhost
-kafka.host = 127.0.0.1
+kafka.host = localhost
 
 ## The kafka loadbalancer node port that bridge is listening on.
 ##
@@ -59,18 +59,25 @@ kafka.port = 9092
 
 ## The kafka loadbalancer node partition strategy.
 ##
-## Value: strict_round_robin
-kafka.partitionstrategy = strict_round_robin
+## Value: random, sticky_round_robin, strict_round_robin, custom
+kafka.partitionstrategy = random
+
+## Each worker represents a connection to a broker + topic + partition combination.
+## You can decide how many workers to start for each partition.
+##
+## Value: 
+kafka.partitionworkers = 2
 
 ## payload topic.
 ##
 ## Value: string
-kafka.payloadtopic = Processing
+kafka.payloadtopic = Payload
 
 ## event topic.
 ##
-## Value: File
-kafka.eventstopic = Events
+## Value: string
+kafka.eventtopic = Event
+
 ```
 
 Start the EMQ broker and load the plugin 
