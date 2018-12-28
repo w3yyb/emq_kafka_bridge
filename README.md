@@ -7,10 +7,10 @@ This is a plugin for the EMQ broker that sends all messages received by the brok
 
 1. Clone emq-relx project
 
-   We need to clone the EMQ-x project [GITHUB](https://github.com/emqtt/emq-relx)
+   We need to clone the EMQ-x project [GITHUB](https://github.com/emqx/emqx-rel)
 
 ```shell
-  git clone https://github.com/emqtt/emq-relx.git
+  git clone https://github.com/emqx/emqx-rel
 ```
 
 2. Add EMQ Kafka bridge as a DEPS
@@ -26,7 +26,7 @@ This is a plugin for the EMQ broker that sends all messages received by the brok
      include erlang.mk
      ```
      add the following line before the above lines
-     >dep_emq_kafka_bridge = git https://github.com/iotblue/emq_kafka_bridge.git master
+     >dep_emq_kafka_bridge = git https://github.com/iotblue/emq_kafka_bridge.git {build version}
 
 3. Add load plugin in relx.config
    >{emq_kafka_bridge, load},
