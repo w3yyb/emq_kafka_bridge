@@ -134,18 +134,18 @@ ekaf_init(_Env) ->
     KafkaPort = proplists:get_value(port, BrokerValues),
     KafkaPartitionStrategy= proplists:get_value(partitionstrategy, BrokerValues),
     KafkaPartitionWorkers= proplists:get_value(partitionworkers, BrokerValues),
-    % KafkaPayloadTopic = proplists:get_value(payloadtopic, BrokerValues),
-    % KafkaEventTopic = proplists:get_value(eventtopic, BrokerValues),
+    KafkaPayloadTopic = proplists:get_value(payloadtopic, BrokerValues),
+    KafkaEventTopic = proplists:get_value(eventtopic, BrokerValues),
     application:set_env(ekaf, ekaf_bootstrap_broker,  {KafkaHost, list_to_integer(KafkaPort)}),
-    application:set_env(ekaf, ekaf_bootstrap_topics,  [<<"Processing">>, <<"DeviceLog">>]),
+    % application:set_env(ekaf, ekaf_bootstrap_topics,  [<<"Processing">>, <<"DeviceLog">>]),
     application:set_env(ekaf, ekaf_partition_strategy, KafkaPartitionStrategy),
     application:set_env(ekaf, ekaf_per_partition_workers, KafkaPartitionWorkers),
     application:set_env(ekaf, ekaf_per_partition_workers_max, 10),
     % application:set_env(ekaf, ekaf_buffer_ttl, 10),
     % application:set_env(ekaf, ekaf_max_downtime_buffer_size, 5),
-    % ets:new(topic_table, [named_table, protected, set, {keypos, 1}]),
-    % ets:insert(topic_table, {kafka_payload_topic, KafkaPayloadTopic}),
-    % ets:insert(topic_table, {kafka_event_topic, KafkaEventTopic}),
+    ets:new(topic_table, [named_table, protected, set, {keypos, 1}]),
+    ets:insert(topic_table, {kafka_payload_topic, KafkaPayloadTopic}),
+    ets:insert(topic_table, {kafka_event_topic, KafkaEventTopic}),
     {ok, _} = application:ensure_all_started(gproc),
     {ok, _} = application:ensure_all_started(ekaf).
 
@@ -190,20 +190,22 @@ unload() ->
 
 
 produce_kafka_payload(Message) ->
-    % [{_, Topic}] = ets:lookup(topic_table, kafka_payload_topic),
-    Topic = <<"Processing">>,
+    [{_, Topic}] = ets:lookup(topic_table, kafka_payload_topic),
+    % Topic = <<"Processing">>,
 	% io:format("send to kafka event topic: byte size: ~p~n", [byte_size(list_to_binary(Topic))]),    
     % Payload = iolist_to_binary(mochijson2:encode(Message)),
     Payload = jsx:encode(Message),
-    ok = ekaf:produce_async(Topic, Payload),
+    % ok = ekaf:produce_async(Topic, Payload),
+    ok = ekaf:produce_async(list_to_binary(Topic), Payload),
     ok.
     
 
 produce_kafka_log(Message) ->
-    % [{_, Topic}] = ets:lookup(topic_table, kafka_event_topic),
-    Topic = <<"DeviceLog">>,
+    [{_, Topic}] = ets:lookup(topic_table, kafka_event_topic),
+    % Topic = <<"DeviceLog">>,
     % io:format("send to kafka event topic: byte size: ~p~n", [byte_size(list_to_binary(Topic))]),    
     % Payload = iolist_to_binary(mochijson2:encode(Message)),
     Payload = jsx:encode(Message),
-    ok = ekaf:produce_async(Topic, Payload),
+    % ok = ekaf:produce_async(Topic, Payload),
+    ok = ekaf:produce_async(list_to_binary(Topic), Payload),
     ok.
