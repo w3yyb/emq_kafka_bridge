@@ -59,7 +59,7 @@ load(Env) ->
 on_client_connected(ConnAck, Client = #mqtt_client{client_id = ClientId, username = Username}, _Env) ->
     % io:format("client ~s/~s will connected: ~w.~n", [ClientId, Username, ConnAck]),
     Event = [{action, <<"connected">>},
-                {device_id, ClientId},
+                {clientid, ClientId},
                 {username, Username},
                 {result, ConnAck}],
     produce_kafka_log(Event),
@@ -68,7 +68,7 @@ on_client_connected(ConnAck, Client = #mqtt_client{client_id = ClientId, usernam
 on_client_disconnected(Reason, _Client = #mqtt_client{client_id = ClientId, username = Username}, _Env) ->
     % io:format("client ~s/~s will connected: ~w~n", [ClientId, Username, Reason]),
     Event = [{action, <<"disconnected">>},
-                {device_id, ClientId},
+                {clientid, ClientId},
                 {username, Username},
                 {result, Reason}],
     produce_kafka_log(Event),
@@ -86,7 +86,7 @@ on_client_disconnected(Reason, _Client = #mqtt_client{client_id = ClientId, user
 % on_session_created(ClientId, Username, _Env) ->
 %     % io:format("session(~s/~s) created~n", [ClientId, Username]),
 %     Event = [{action, connected},
-%                 {device_id, ClientId},
+%                 {clientid, ClientId},
 %                 {username, Username}],
 %     produce_kafka_log(Event).
 
@@ -101,7 +101,7 @@ on_client_disconnected(Reason, _Client = #mqtt_client{client_id = ClientId, user
 % on_session_terminated(ClientId, Username, Reason, _Env) ->
 %     % io:format("session(~s/~s/~s) terminated~n", [ClientId, Username, Reason]),
 %     Event = [{action, disconnected},
-%                 {device_id, ClientId},
+%                 {clientid, ClientId},
 %                 {username, Username}],
 %     produce_kafka_log(Event).
 
@@ -118,7 +118,7 @@ on_message_publish(Message, _Env) ->
 % on_message_delivered(ClientId, Username, Message, _Env) ->
 %     % io:format("delivered to client(~s/~s): ~s~n", [Username, ClientId, emqttd_message:format(Message)]),
 %     Event = [{action, <<"delivered">>},
-%                 {device_id, ClientId},
+%                 {clientid, ClientId},
 %                 {username, Username},
 %                 {message, emqttd_message:format(Message)}],
 %     produce_kafka_log(Event),
@@ -151,14 +151,14 @@ ekaf_init(_Env) ->
 
 % format_event(Action, Client) ->
 %     Event = [{action, Action},
-%                 {device_id, Client#mqtt_client.client_id},
+%                 {clientid, Client#mqtt_client.client_id},
 %                 {username, Client#mqtt_client.username}],
 %     {ok, Event}.
 
 format_payload(Message) ->
     {ClientId, Username} = format_from(Message#mqtt_message.from),
     Payload = [{action, <<"message_publish">>},
-                  {device_id, ClientId},
+                  {clientid, ClientId},
                   {username, Username},
                   {topic, Message#mqtt_message.topic},
                   {payload, Message#mqtt_message.payload},
