@@ -26,7 +26,7 @@ This is a plugin for the EMQ broker that sends all messages received by the brok
      include erlang.mk
      ```
      add the following line before the above lines
-     >dep_emq_kafka_bridge = git https://github.com/iotblue/emq_kafka_bridge.git {build version}
+     >dep_emq_kafka_bridge = git https://github.com/iotblue/emq_kafka_bridge.git v2.3.11
 
 3. Add load plugin in relx.config
    >{emq_kafka_bridge, load},
@@ -84,7 +84,7 @@ Start the EMQ broker and load the plugin
 -----------------
 1) cd emq-relx/_rel/emqttd
 2) ./bin/emqttd start
-3) ./bin/emqttd_ctl plugins load emqttd_kafka_bridge
+3) ./bin/emqttd_ctl plugins load emq_kafka_bridge
 
 Test
 -----------------
