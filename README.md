@@ -80,6 +80,8 @@ kafka.payloadtopic = Payload
 kafka.eventtopic = Event
 
 ```
+edit    rel/conf/plugins/emq_kafka_bridge.conf  and _rel/emqttd/etc/plugins/emq_kafka_bridge.conf
+IP and port.
 
 Start the EMQ broker and load the plugin 
 -----------------
