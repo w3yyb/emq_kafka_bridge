@@ -2,6 +2,7 @@
 # emq_kafka_bridge
 
 This is a plugin for the EMQ broker that sends all messages received by the broker to kafka.
+note:Erlang/OTP R19.3+ to build is required to build since EMQ 2.2-rc.2
 
 ## Build the EMQ broker
 
@@ -25,7 +26,7 @@ This is a plugin for the EMQ broker that sends all messages received by the brok
      #NO_AUTOPATCH = emq_elixir_plugin
      include erlang.mk
      ```
-     add the following line before the above lines
+     add the following line `before` the above lines
      >dep_emq_kafka_bridge = git https://github.com/iotblue/emq_kafka_bridge.git v2.3.11
 
 3. Add load plugin in relx.config
