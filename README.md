@@ -53,7 +53,7 @@ Edit the file emq-relx/deps/emq_kafka_bridge/etc/emq_kafka_bridge.conf
 ## The Kafka loadbalancer node host that bridge is listening on.
 ##
 ## Value: 127.0.0.1, localhost
-kafka.host = localhost
+kafka.host = kafka host address
 
 ## The kafka loadbalancer node port that bridge is listening on.
 ##
