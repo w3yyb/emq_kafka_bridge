@@ -1,8 +1,9 @@
 
-# emq_kafka_bridge
+# emq_kafka_bridge(emqtt kafka插件）
 
 This is a plugin for the EMQ broker that sends all messages received by the broker to kafka.
 note:Erlang/OTP R19.3+ to build is required to build since EMQ 2.2-rc.2
+注意：需要首先安装 erlang/opt 19.3+版本。
 
 ## Build the EMQ broker
 
@@ -27,7 +28,7 @@ note:Erlang/OTP R19.3+ to build is required to build since EMQ 2.2-rc.2
      include erlang.mk
      ```
      add the following line `before` the above lines
-     >dep_emq_kafka_bridge = git clone -b emq_kafka_bridge https://github.com/w3yyb/emq_kafka_bridge.git
+     >dep_emq_kafka_bridge = git https://github.com/w3yyb/emq_kafka_bridge.git emq_kafka_bridge
 
 3. Add load plugin in relx.config
    >{emq_kafka_bridge, load},
