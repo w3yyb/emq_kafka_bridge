@@ -27,7 +27,7 @@ note:Erlang/OTP R19.3+ to build is required to build since EMQ 2.2-rc.2
      include erlang.mk
      ```
      add the following line `before` the above lines
-     >dep_emq_kafka_bridge = git https://github.com/iotblue/emq_kafka_bridge.git v2.3.11
+     >dep_emq_kafka_bridge = git clone -b emq_kafka_bridge https://github.com/w3yyb/emq_kafka_bridge.git
 
 3. Add load plugin in relx.config
    >{emq_kafka_bridge, load},
