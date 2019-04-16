@@ -9,7 +9,7 @@ note:Erlang/OTP R19.3+ to build is required to build since EMQ 2.2-rc.2
 
 1. Clone emq-relx project
 
-   We need to clone the EMQ-x project [GITHUB](https://github.com/emqx/emqx-rel)
+   We need to download the EMQ-x  source files
 
 ```shell
   wget https://github.com/emqx/emqx-rel/archive/v2.3.11.zip
@@ -43,7 +43,7 @@ Configuration
 ----------------------
 You will have to edit the configurations of the bridge to set the kafka Ip address and port.
 
-Edit the file emq-relx/deps/emq_kafka_bridge/etc/emq_kafka_bridge.conf
+Edit the file `emq-relx/deps/emq_kafka_bridge/etc/emq_kafka_bridge.conf`
 
 ```conf
 ##--------------------------------------------------------------------
@@ -82,7 +82,7 @@ kafka.payloadtopic = Payload
 kafka.eventtopic = Event
 
 ```
-edit    rel/conf/plugins/emq_kafka_bridge.conf  and _rel/emqttd/etc/plugins/emq_kafka_bridge.conf
+edit    `rel/conf/plugins/emq_kafka_bridge.conf`  and `_rel/emqttd/etc/plugins/emq_kafka_bridge.conf`
 IP and port.
 
 Start the EMQ broker and load the plugin 
