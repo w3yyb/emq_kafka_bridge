@@ -12,7 +12,7 @@ note:Erlang/OTP R19.3+ to build is required to build since EMQ 2.2-rc.2
    We need to clone the EMQ-x project [GITHUB](https://github.com/emqx/emqx-rel)
 
 ```shell
-  git clone https://github.com/emqx/emqx-rel
+  wget https://github.com/emqx/emqx-rel/archive/v2.3.11.zip
 ```
 
 2. Add EMQ Kafka bridge as a DEPS
