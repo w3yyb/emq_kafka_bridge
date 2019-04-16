@@ -160,7 +160,7 @@ format_payload(Message) ->
     Payload = [{action, <<"message_publish">>},
                   {clientid, ClientId},
                   {username, Username},
-                  {topic, Message#mqtt_message.topic},
+                  {mqtttopic, Message#mqtt_message.topic},
                   {payload, Message#mqtt_message.payload},
                   {ts, emqttd_time:now_secs(Message#mqtt_message.timestamp)}],
     {ok, Payload}.
