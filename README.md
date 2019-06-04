@@ -5,6 +5,8 @@ This is a plugin for the EMQ broker that sends all messages received by the brok
 note:Erlang/OTP R19.3+ to build is required to build since EMQ 2.2-rc.2
 注意：需要首先安装 erlang/opt 19.3+版本。
 
+## emqxV3.1.X版本的请参考 https://github.com/w3yyb/emqx_kafka_bridge
+
 ## Build the EMQ broker
 
 1. Clone emq-relx project
